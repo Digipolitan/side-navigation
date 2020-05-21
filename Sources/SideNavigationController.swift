@@ -31,6 +31,8 @@ open class SideNavigationController: UIViewController {
 
     public private(set) var left: Side?
     public private(set) var right: Side?
+    
+    public var delegate: SideNavigationControllerDelegate?
 
     public var mainViewController: UIViewController! {
         willSet(newValue) {
@@ -159,6 +161,7 @@ open class SideNavigationController: UIViewController {
         if let viewController = viewController {
             viewController.view.removeFromSuperview()
             viewController.removeFromParent()
+            delegate = nil
         }
     }
 
@@ -224,6 +227,7 @@ open class SideNavigationController: UIViewController {
             side.viewController.view.isHidden = false
             self.updateSide(with: direction, progress: 0)
         }, completion: { _ in
+            self.delegate?.sideDidClosed()
             side.viewController.view.isHidden = true
             self.revertSideDirection = false
             self.mainGestures(enabled: false, direction: direction)
@@ -254,6 +258,7 @@ open class SideNavigationController: UIViewController {
             self.visibleSideViewController = side.viewController
             self.updateSide(with: direction, progress: 1)
         }, completion: { _ in
+            self.delegate?.sideDidOpen()
             self.revertSideDirection = true
             self.mainGestures(enabled: true, direction: direction)
             #if os(iOS)
@@ -504,4 +509,12 @@ fileprivate extension SideNavigationController {
         }
         self.closeSide()
     }
+}
+
+public protocol SideNavigationControllerDelegate {
+    
+    func sideDidClosed()
+    
+    func sideDidOpen()
+    
 }
