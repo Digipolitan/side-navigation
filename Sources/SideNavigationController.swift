@@ -118,6 +118,11 @@ open class SideNavigationController: UIViewController {
         self.updateSide(with: direction, progress: 0)
         #if os(iOS)
         self.sideGestures(enabled: true)
+        if side.options.closeOnTouchOutside {
+            self.overlay.addGestureRecognizer(self.gestures.mainTap)
+        } else {
+            self.overlay.removeGestureRecognizer(self.gestures.mainTap)
+        }
         #endif
     }
 
