@@ -32,6 +32,7 @@ open class SideNavigationController: UIViewController {
     public private(set) var left: Side?
     public private(set) var right: Side?
     
+    public private(set) var isSideOpen: Bool = false
     public var delegate: SideNavigationControllerDelegate?
 
     public var mainViewController: UIViewController! {
@@ -227,12 +228,14 @@ open class SideNavigationController: UIViewController {
             return
         }
         side.viewController.view.endEditing(animated)
+        self.delegate?.sideWillClose()
         UIView.animate(withDuration: animated ? side.options.animationDuration : 0, animations: {
             self.visibleSideViewController = nil
             side.viewController.view.isHidden = false
             self.updateSide(with: direction, progress: 0)
         }, completion: { _ in
             self.delegate?.sideDidClosed()
+            self.isSideOpen = false
             side.viewController.view.isHidden = true
             self.revertSideDirection = false
             self.mainGestures(enabled: false, direction: direction)
@@ -259,11 +262,13 @@ open class SideNavigationController: UIViewController {
             return
         }
         self.mainViewController.view.endEditing(animated)
+        self.delegate?.sideWillOpen()
         UIView.animate(withDuration: animated ? side.options.animationDuration : 0, animations: {
             self.visibleSideViewController = side.viewController
             self.updateSide(with: direction, progress: 1)
         }, completion: { _ in
             self.delegate?.sideDidOpen()
+            self.isSideOpen = true
             self.revertSideDirection = true
             self.mainGestures(enabled: true, direction: direction)
             #if os(iOS)
@@ -319,7 +324,7 @@ public extension SideNavigationController {
     fileprivate class Gestures {
 
         public static let velocityTolerance: CGFloat = 600
-
+       
         private weak var sideNavigationController: SideNavigationController?
         #if os(iOS)
         public var leftScreenEdgePan: UIScreenEdgePanGestureRecognizer!
@@ -347,14 +352,13 @@ public extension SideNavigationController {
             #endif
 
             self.mainPan = UIPanGestureRecognizer(target: self, action: #selector(handle(panGesture:)))
-
             self.mainTap = UITapGestureRecognizer(target: self, action: #selector(handle(tapGesture:)))
             #if os(tvOS)
             self.mainTap.allowedPressTypes = [NSNumber(value: UIPress.PressType.menu.rawValue)]
             #endif
             self.mainTap.require(toFail: self.mainPan)
         }
-
+        
         @objc
         private func handle(panGesture: UIPanGestureRecognizer) {
             guard let sideNavigationController = self.sideNavigationController else {
@@ -518,8 +522,9 @@ fileprivate extension SideNavigationController {
 
 public protocol SideNavigationControllerDelegate {
     
+    func sideWillClose()
     func sideDidClosed()
-    
+    func sideWillOpen()
     func sideDidOpen()
     
 }
